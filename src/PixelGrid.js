@@ -1,35 +1,51 @@
 import React, { Component } from 'react'
-import Dot from "./Dot.js"
 
 class PixelGrid extends Component {
 	constructor(props) {
 		super(props)
+
+		this.socket = this.props.socket
+		this.canvas = null
 	}
 
-	handleDotClick = (row, col) => {
-		this.props.onPixelClick(row, col)
+	componentDidMount() {
+		this.ctx = this.canvas.getContext('2d')
+		this.canvas.style.imageRendering = 'pixelated'
+		
+		this.socket.on('initial-pixel-data', pixelData => {
+			this.canvas.height = pixelData.length
+			this.canvas.width = pixelData[0].length
+			pixelData.forEach((row, rowIdx) => {
+				row.forEach((color,colIdx) => {
+					this.draw(rowIdx, colIdx, color)
+				})
+			})
+		})
+
+		this.socket.on('update-dot',({row, col, color}) => {
+			this.draw(col, row, color)
+		})
+	}
+	draw = (row, col, color) => {
+		this.ctx.fillStyle = color
+		this.ctx.fillRect(row, col, 1, 1)
+	}
+	handleDotClick = (e) => {
+		console.log(e.nativeEvent)
+		var layerX = e.nativeEvent.layerX
+		var layerY = e.nativeEvent.layerY
+
+		var row = Math.floor(layerY / 15)
+		var col = Math.floor(layerX / 15)
+
+		this.socket.emit('draw-dot', {row, col, color:this.props.currentColor})
 	}
 	render() {
-		if (!this.props.pixels) {
-			return null
-		} else {
 			return (
-				<table style={{tableLayout:'fixed'}}>
-					<tbody>
-						{
-							this.props.pixels.map((row,rowIdx) => (
-								<tr key={rowIdx}>
-									{row.map((color,colIdx) => (
-										<Dot key = {colIdx} onClick={this.handleDotClick} color={color} row={rowIdx} col={colIdx}/>
-									))}
-								</tr>
-							))
-						}
-					</tbody>
-					
-				</table>
+				<div> 
+					<canvas onClick={this.handleDotClick} style={{zoom:15}} ref={el => this.canvas = el}></canvas>
+				</div>
 			)
-		}
 	}
 	
 }

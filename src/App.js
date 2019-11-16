@@ -11,46 +11,14 @@ class App extends Component{
     super(props)
     this.state = {
       currentColor: 'red',
-      pixelData: null
     }
+    this.socket = io('ws://localhost:3005/')
   }
 
   componentDidMount() {
-    this.socket = io('ws://localhost:3005/')
-    this.socket.on('pixel-data', (data) => {
-      console.log(data)
-      this.setState({
-        pixelData: data
-      })
-    })
-    this.socket.on('update-dot', info => {
-      console.log(info)
-      this.setState(produce(this.state, state => {
-        state.pixelData[info.row][info.col] = info.color
-      }))
-      // this.setState({
-      //   pixelData: this.state.pixelData.map((row, rowIdx) => {
-      //     if (rowIdx === info.row) {
-      //       return row.map((color, colIdx) => {
-      //         if (colIdx === info.col) {
-      //           return info.color
-      //         } else {
-      //           return color
-      //         }
-      //       })
-      //     } else {
-      //       return row
-      //     }
-      //   })
-      // })
-    })
+    
   }
   handlePixelClick = (row, col) => {
-    this.socket.emit('draw-dot', {
-      row,
-      col,
-      color:this.state.currentColor,
-    })
   }
   changeCurrentColor = (color) => {
     console.log(color)
@@ -61,7 +29,8 @@ class App extends Component{
   render() {
     return (
       <div>
-        <PixelGrid onPixelClick={this.handlePixelClick} pixels={this.state.pixelData}/>
+        <PixelGrid currentColor={this.state.currentColor} 
+        socket={this.socket}/>
         <ColorSelect onChange={this.changeCurrentColor} color={this.state.currentColor}/>
       </div>
     )
