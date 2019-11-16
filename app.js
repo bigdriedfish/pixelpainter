@@ -14,28 +14,21 @@ const io = socketIO(server)
 //app.use(express.static(path, join(__dirname, './dist')))
 
 const pixelData = [
-	['red','red','blue','white'],
-	['red','red','blue','white'],
-	['red','red','blue','white'],
-	['red','red','blue','white'],
+	['red','red','blue','green'],
+	['red','red','blue','green'],
+	['red','red','blue','green'],
+	['red','red','blue','green'],
 ]
 
-var clients = []
-
 io.on('connection', (socket) => {
-	clients.push(socket)
 
-	socket.emit('pixel-data', pixelData)
+	socket.emit('initial-pixel-data', pixelData)
 
 	socket.on('draw-dot', ({row, col, color}) => {
 		pixelData[row][col] = color
 		socket.emit('update-dot', {row,col,color})
-		// clients.forEach(client => {
-		// 	client.emit('update-dot', {row, col, color})
-		// })
 	})
 	socket.on('disconnect', () => {
-		clients = clients.filter(it => it != socket)
 		console.log('son leaves')
 	})
 })
