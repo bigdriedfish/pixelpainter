@@ -14,31 +14,61 @@ const server = app.listen(port, () => {
 const io = socketIO(server)
 
 //app.use(express.static(path, join(__dirname, './dist')))
+async function main() {
+	const pixelData = await Jimp.read('./pixelData.png')
 
-const pixelData = new Jimp(20,20,0xffff00ff)
+	let onlineCount = 0
 
-io.on('connection', async (socket) => {
+	//进行批量更新
+	let dotOperations = []
+	setInterval(() => {
+		if(dotOperations.length) {
+			//服务器向所有客户端广播事件
+			io.emit('update-dots', dotOperations)
+			dotOperations = []
+		}
+	},100)
 
-	var pngBuffer = await pixelData.getBufferAsync(Jimp.MIME_PNG)
-	socket.emit('initial-pixel-data', pngBuffer)
+	io.on('connection', async (socket) => {
+		onlineCount++
+		io.emit('online-count', onlineCount)
 
-	socket.on('draw-dot', async ({row, col, color}) => {
-		var hexColor = Jimp.cssColorToHex(color)
 
-		pixelData.setPixelColor(hexColor, col, row)
-		socket.emit('update-dot', {row,col,color})
+		//将图片数据转换成二进制buffer
+		var pngBuffer = await pixelData.getBufferAsync(Jimp.MIME_PNG)
+		var lastDrawTime = 0
+		socket.emit('initial-pixel-data', pngBuffer)
 
-		var buf = await pixelData.getBufferAsync(Jimp.MIME_PNG)
-		fs.writeFile('./pixelData.png', buf, (err) => {
-			if (err) {
-				console.log(err)
-			}	else {
-				console.log('saved success')
+		socket.on('draw-dot', async ({row, col, color}) => {
+			//设置绘制间隔
+			var now = Date.now()
+			if (now - lastDrawTime < 3000) {
+				return 
 			}
+			lastDrawTime = now
+
+			//将字符串颜色转换为十六进制颜色
+			var hexColor = Jimp.cssColorToHex(color)
+			pixelData.setPixelColor(hexColor, col, row)
+
+			dotOperations.push({row, col, color})
+
+			//io.emit('update-dot', {row, col, color})
+			
+
+			try {
+				var buf = await pixelData.getBufferAsync(Jimp.MIME_PNG)
+				await fs.promises.writeFile('./pixelData.png', buf)
+				console.log('saved success')
+			}	catch(e) {
+				console.log(e)
+			}
+			})
+		socket.on('disconnect', () => {
+			onlineCount--
+			console.log('someone leaves')
 		})
 	})
-	socket.on('disconnect', () => {
-		console.log('son leaves')
-	})
-})
+}
+main()
 
