@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 
-var colors = ['red','orange','yellow','green','aqua','blue','purple']
+var colors = ['#ff0000','#ffa500','#ffff00','#008000','#00ffff','#0000ff','#800080']
 
 var ulStyle = {
 	margin: 0,
@@ -16,15 +16,18 @@ var btnStyle = {
 }
 function ColorSelect(props) {
 	return (
-		<ul style={ulStyle}>
-			{
-				colors.map(color => (
-					<li style={liStyle} key={color}>
-					<button onClick={() => props.onChange(color)} style={{...btnStyle,backgroundColor: color}}></button>
-					</li>
-				))
-			}
-		</ul>
+		<div>
+			<input type="color" value={props.color} onChange={(e) => props.onChange(e.target.value)}/>
+			<ul style={ulStyle}>
+				{
+					colors.map(color => (
+						<li style={liStyle} key={color}>
+						<button onClick={() => props.onChange(color)} style={{...btnStyle,backgroundColor: color}}></button>
+						</li>
+					))
+				}
+			</ul>
+		</div>
 	)
 }
 

@@ -13,15 +13,53 @@ function createImageFromArrayBuffer(buf) {
 	
 }
 
+var canvasStyle = {
+	display:'block',
+	position:'absolute',
+	left:0,
+	top:0
+}
 class PixelGrid extends Component {
 	constructor(props) {
 		super(props)
+
+		this.state = {
+			zoomLevel:5,
+		}
 
 		this.socket = this.props.socket
 		this.canvas = null
 	}
 
+	setUpZoomHandler = () => {
+		this.canvas.addEventListener('mousewheel',e => {
+			console.log(e)
+			var mouseLayerX = e.layerX
+			var mouseLayerY = e.layerY
+			var oldZoomLevel = this.state.zoomLevel
+			var  newZoomLevel
+			if (e.deltaY < 0) {
+				newZoomLevel = this.state.zoomLevel + 1
+			}	else {
+				newZoomLevel = this.state.zoomLevel - 1
+			}
+
+			var zoomRatio = newZoomLevel / oldZoomLevel
+			var diffX = mouseLayerX * (zoomRatio - 1) / newZoomLevel
+			var diffY = mouseLayerY * (zoomRatio - 1) / newZoomLevel
+			this.canvas.style.left = parseInt(this.canvas.style.left) - diffX + 'px'
+			this.canvas.style.top = parseInt(this.canvas.style.top) - diffY +'px'
+			this.setState({
+				zoomLevel: newZoomLevel
+			
+			})
+			
+			e.preventDefault()
+		})
+	}
+
 	componentDidMount() {
+		this.setUpZoomHandler()
 		this.ctx = this.canvas.getContext('2d')
 		this.canvas.style.imageRendering = 'pixelated'
 		
@@ -49,15 +87,15 @@ class PixelGrid extends Component {
 		var layerX = e.nativeEvent.layerX
 		var layerY = e.nativeEvent.layerY
 
-		var row = Math.floor(layerY / 15)
-		var col = Math.floor(layerX / 15)
+		var row = Math.floor(layerY / this.state.zoomLevel)
+		var col = Math.floor(layerX / this.state.zoomLevel)
 
 		this.socket.emit('draw-dot', {row, col, color:this.props.currentColor})
 	}
 	render() {
 			return (
-				<div> 
-					<canvas onClick={this.handleDotClick} style={{zoom:15}} ref={el => this.canvas = el}></canvas>
+				<div style={{margin: '220px',position:'relative',display:'inline-block', border:'1px solid',width: this.props.width, height:this.props.height, xoverflow:'hidden'}}> 
+					<canvas onClick={this.handleDotClick} style={{...canvasStyle,zoom:this.state.zoomLevel}} ref={el => this.canvas = el}></canvas>
 				</div>
 			)
 	}
