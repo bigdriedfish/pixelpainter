@@ -1,5 +1,18 @@
 import React, { Component } from 'react'
 
+function createImageFromArrayBuffer(buf) {
+	return new Promise(resolve => {
+		var blob = new Blob([buf], {type:'image/png'})
+		var image = new Image()
+		var url = URL.createObjectURL(blob)
+		image.onload = function() {
+			resolve(image)
+		}
+		image.src = url 
+	})
+	
+}
+
 class PixelGrid extends Component {
 	constructor(props) {
 		super(props)
@@ -12,14 +25,16 @@ class PixelGrid extends Component {
 		this.ctx = this.canvas.getContext('2d')
 		this.canvas.style.imageRendering = 'pixelated'
 		
-		this.socket.on('initial-pixel-data', pixelData => {
-			this.canvas.height = pixelData.length
-			this.canvas.width = pixelData[0].length
-			pixelData.forEach((row, rowIdx) => {
-				row.forEach((color,colIdx) => {
-					this.draw(rowIdx, colIdx, color)
-				})
-			})
+		this.socket.on('initial-pixel-data', async pixelData => {
+		
+			var image = await createImageFromArrayBuffer(pixelData)
+	
+			this.canvas.width = image.width
+			this.canvas.height = image.height
+
+			this.ctx.drawImage(image, 0, 0)
+
+		
 		})
 
 		this.socket.on('update-dot',({row, col, color}) => {
@@ -31,7 +46,6 @@ class PixelGrid extends Component {
 		this.ctx.fillRect(row, col, 1, 1)
 	}
 	handleDotClick = (e) => {
-		console.log(e.nativeEvent)
 		var layerX = e.nativeEvent.layerX
 		var layerY = e.nativeEvent.layerY
 
