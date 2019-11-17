@@ -17,7 +17,8 @@ var canvasStyle = {
 	display:'block',
 	position:'absolute',
 	left:0,
-	top:0
+	top:0,
+	transformOrigin:'top left'
 }
 class PixelGrid extends Component {
 	constructor(props) {
@@ -43,21 +44,63 @@ class PixelGrid extends Component {
 			}	else {
 				newZoomLevel = this.state.zoomLevel - 1
 			}
+		
+			var a = oldZoomLevel
+			var b = newZoomLevel
+			var x = mouseLayerX
+			var y = mouseLayerY
+			var l1 = parseFloat(this.canvas.style.left)
+			var t1 = parseFloat(this.canvas.style.top)
 
-			var zoomRatio = newZoomLevel / oldZoomLevel
-			var diffX = mouseLayerX * (zoomRatio - 1) / newZoomLevel
-			var diffY = mouseLayerY * (zoomRatio - 1) / newZoomLevel
-			this.canvas.style.left = parseInt(this.canvas.style.left) - diffX + 'px'
-			this.canvas.style.top = parseInt(this.canvas.style.top) - diffY +'px'
+			// var l2 = (l1 * a - (b / a - 1) * x) / b //zoom属性放大
+			// var t2 = (t1 * a - (b / a - 1) * x) / b //zoom属性放大
+		
+			var l2 = l1 - (b / a - 1) * x			//transform属性放大
+			var t2 = t1 - (b / a - 1) * y    //transform属性放大
+			
+			
+			this.canvas.style.left = l2 + 'px'
+			this.canvas.style.top = t2 +'px'
 			this.setState({
 				zoomLevel: newZoomLevel
-			
 			})
 			
 			e.preventDefault()
 		})
+		this.setUpDragHandler()
 	}
 
+	setUpDragHandler = () => {
+		var initialLeft
+		var initialTop
+		var mouseInitialX
+		var mouseInitialY
+		var dragging = false
+		this.canvas.addEventListener('mousedown', e => {
+			initialLeft = parseFloat(this.canvas.style.left)
+			initialTop = parseFloat(this.canvas.style.top)
+			mouseInitialX = e.clientX
+			mouseInitialY = e.clientY
+			dragging = true  
+		}) 
+		this.canvas.addEventListener('mousemove', e => {
+			if (dragging) {
+				var mouseX = e.clientX
+				var mouseY = e.clientY
+				var mouseMoveX = mouseX - mouseInitialX
+				var mouseMoveY = mouseY - mouseInitialY
+				var left = initialLeft + mouseMoveX 
+				var top = initialTop + mouseMoveY
+				this.canvas.style.left = left + 'px'
+				this.canvas.style.top = top + 'px'
+				
+			}
+		}) 
+		this.canvas.addEventListener('mouseup', e => {
+			dragging = false
+		}) 
+		
+	}
 	componentDidMount() {
 		this.setUpZoomHandler()
 		this.ctx = this.canvas.getContext('2d')
@@ -95,7 +138,11 @@ class PixelGrid extends Component {
 	render() {
 			return (
 				<div style={{margin: '220px',position:'relative',display:'inline-block', border:'1px solid',width: this.props.width, height:this.props.height, xoverflow:'hidden'}}> 
-					<canvas onClick={this.handleDotClick} style={{...canvasStyle,zoom:this.state.zoomLevel}} ref={el => this.canvas = el}></canvas>
+					<canvas onClick={this.handleDotClick} 
+					style={{...canvasStyle, 
+						transform:'scale(' + this.state.zoomLevel + ')', 
+						//zoom: this.state.zoomLevel
+					}} ref={el => this.canvas = el}></canvas>
 				</div>
 			)
 	}
