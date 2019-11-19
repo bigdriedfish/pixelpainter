@@ -13,7 +13,7 @@ const server = app.listen(port, () => {
 
 const io = socketIO(server)
 
-//app.use(express.static(path, join(__dirname, './dist')))
+app.use(express.static(path, join(__dirname, '../fe/build')))
 async function main() {
 	const pixelData = await Jimp.read('./pixelData.png')
 
