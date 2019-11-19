@@ -24,7 +24,7 @@ class App extends Component{
     this.state = {
       currentColor: '#ffffff',
     }
-    this.socket = io('ws://localhost:3005/')
+    this.socket = io()
   }
   //发送网络请求和设置定时器应在componentDidMount阶段完成
   //因为此时dom已经渲染完成，可保证数据的正确加载
